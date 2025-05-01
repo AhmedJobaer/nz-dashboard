@@ -1,0 +1,24 @@
+<div class="container mt-4">
+  <div class="row mb-3">
+    <div class="col-md-3">
+      <label for="startDate" class="form-label">Start Date</label>
+      <input type="date" id="startDate" class="form-control" />
+    </div>
+    <div class="col-md-3">
+      <label for="endDate" class="form-label">End Date</label>
+      <input type="date" id="endDate" class="form-control" />
+    </div>
+    <div class="col-md-6 d-flex align-items-end gap-2">
+      <button class="btn btn-outline-primary">Today</button>
+      <button class="btn btn-outline-secondary">Weekly</button>
+      <button class="btn btn-outline-success">Monthly</button>
+      <button class="btn btn-primary ms-auto">Filter</button>
+    </div>
+  </div>
+
+  <highcharts-chart
+    [Highcharts]="Highcharts"
+    [options]="chartOptions"
+    style="width: 100%; height: 400px; display: block"
+  ></highcharts-chart>
+</div>
