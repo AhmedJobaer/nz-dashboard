@@ -1,24 +1,104 @@
 <div class="container mt-4">
   <div class="row mb-3">
-    <div class="col-md-3">
-      <label for="startDate" class="form-label">Start Date</label>
-      <input type="date" id="startDate" class="form-control" />
-    </div>
-    <div class="col-md-3">
-      <label for="endDate" class="form-label">End Date</label>
-      <input type="date" id="endDate" class="form-control" />
-    </div>
-    <div class="col-md-6 d-flex align-items-end gap-2">
-      <button class="btn btn-outline-primary">Today</button>
-      <button class="btn btn-outline-secondary">Weekly</button>
-      <button class="btn btn-outline-success">Monthly</button>
-      <button class="btn btn-primary ms-auto">Filter</button>
+    <form
+      [formGroup]="form"
+      (ngSubmit)="onSearch()"
+      class="row g-2 align-items-end"
+    >
+      <div class="col-md-3">
+        <input
+          type="date"
+          class="form-control"
+          formControlName="startDate"
+          placeholder="Start Date"
+          [max]="today"
+        />
+      </div>
+
+      <div class="col-md-3">
+        <input
+          type="date"
+          class="form-control"
+          formControlName="endDate"
+          placeholder="End Date"
+          [max]="today"
+        />
+      </div>
+
+      <div class="col-md-3">
+        <select class="form-select" formControlName="currency">
+          <option *ngFor="let currency of currencies" [value]="currency">
+            {{ currency }}
+          </option>
+        </select>
+      </div>
+
+      <div class="col-md-3 d-flex gap-2">
+        <button type="submit" class="btn btn-primary w-100">Filter</button>
+        <button
+          type="button"
+          class="btn btn-outline-secondary w-100"
+          (click)="onReset()"
+        >
+          Reset
+        </button>
+      </div>
+    </form>
+
+    <div class="col-md-6 d-flex align-items-end gap-2 mt-2">
+      <button
+        type="button"
+        class="btn btn-outline-primary"
+        (click)="setToday()"
+      >
+        Today
+      </button>
+      <button
+        type="button"
+        class="btn btn-outline-primary"
+        (click)="setYesterday()"
+      >
+        Yesterday
+      </button>
+      <button
+        type="button"
+        class="btn btn-outline-primary"
+        (click)="setThisWeek()"
+      >
+        Week
+      </button>
+      <button
+        type="button"
+        class="btn btn-outline-primary"
+        (click)="setThisMonth()"
+      >
+        Month
+      </button>
     </div>
   </div>
 
-  <highcharts-chart
-    [Highcharts]="Highcharts"
-    [options]="chartOptions"
-    style="width: 100%; height: 400px; display: block"
-  ></highcharts-chart>
+  <div class="row g-3">
+    <div
+      class="col-6 col-md-4 col-lg-3"
+      *ngFor="let item of data.statusSummary"
+    >
+      <div
+        class="card shadow-sm h-100 text-white text-center"
+        [ngStyle]="{ backgroundColor: statusColors[item.status] || '#999999' }"
+      >
+        <div class="card-body d-flex flex-column justify-content-center">
+          <h5 class="card-title mb-2">{{ item.status }}</h5>
+          <p class="card-text fs-4 fw-bold">{{ item.count }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mt-5">
+    <highcharts-chart
+      [Highcharts]="Highcharts"
+      [options]="chartOptions"
+      style="width: 100%; height: 400px; display: block"
+    ></highcharts-chart>
+  </div>
 </div>

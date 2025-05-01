@@ -5,10 +5,16 @@ import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { TicketSupportComponent } from './ticket-support/ticket-support.component';
 import { HighchartsChartModule } from 'highcharts-angular';
+import { ReactiveFormsModule } from '@angular/forms';
 
 @NgModule({
   declarations: [AppComponent, TicketSupportComponent],
-  imports: [BrowserModule, AppRoutingModule, HighchartsChartModule],
+  imports: [
+    BrowserModule,
+    AppRoutingModule,
+    HighchartsChartModule,
+    ReactiveFormsModule,
+  ],
   providers: [],
   bootstrap: [AppComponent],
 })
