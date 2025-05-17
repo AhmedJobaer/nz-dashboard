@@ -12,6 +12,12 @@ export class TicketSupport2Component {
   statusSummary: { status: string; count: number }[] = [];
   Highcharts: typeof Highcharts = Highcharts;
   chartOptions: Highcharts.Options = {};
+  airlineBarChartOptions: Highcharts.Options = {};
+  top5AirlinesChartOptions: Highcharts.Options = {};
+  routeBarChartOptions: Highcharts.Options = {};
+  routeDonutChartOptions: Highcharts.Options = {};
+  top5RouteBarChartOptions: Highcharts.Options = {};
+  top5RouteDonutChartOptions: Highcharts.Options = {};
 
   statusColors: { [key: string]: string } = {
     CONFIRMED: '#28a745',
@@ -26,12 +32,15 @@ export class TicketSupport2Component {
   constructor(private dataService: DataService) {
     this.dataService.getJsonData().subscribe((response: any) => {
       this.data = response;
-      console.log(this.data);
-      this.prepareSummaryAndChart();
+      this.prepareSummaryAndPieChart();
+      this.prepareAirlineBarChart();
+      this.prepareTop5AirlinesChart(); // ✅ new chart
+      this.prepareRouteCharts();
+      this.prepareTop5RouteCharts();
     });
   }
 
-  prepareSummaryAndChart() {
+  prepareSummaryAndPieChart() {
     const statusCountMap: { [status: string]: number } = {};
 
     this.data.forEach((item) => {
@@ -80,10 +89,314 @@ export class TicketSupport2Component {
       series: [
         {
           name: 'Tickets',
-          colorByPoint: false, // use the manual color set above
+          colorByPoint: false,
           data: chartData,
         },
       ] as Highcharts.SeriesOptionsType[],
+    };
+  }
+
+  prepareAirlineBarChart() {
+    // Filter confirmed tickets
+    const confirmedTickets = this.data.filter(
+      (item) => item.status && item.status.toUpperCase() === 'CONFIRMED'
+    );
+
+    // Count by plating_carrier
+    const carrierCountMap: { [carrier: string]: number } = {};
+    confirmedTickets.forEach((item) => {
+      const carrier = item.plating_carrier || 'UNKNOWN';
+      carrierCountMap[carrier] = (carrierCountMap[carrier] || 0) + 1;
+    });
+
+    const categories = Object.keys(carrierCountMap);
+    const counts = Object.values(carrierCountMap);
+
+    this.airlineBarChartOptions = {
+      chart: {
+        type: 'bar',
+      },
+      title: {
+        text: 'Confirmed Tickets by Airline Code',
+      },
+      xAxis: {
+        categories: categories,
+        title: {
+          text: 'Plating Carrier',
+        },
+      },
+      yAxis: {
+        min: 0,
+        title: {
+          text: 'Ticket Count',
+          align: 'high',
+        },
+        labels: {
+          overflow: 'justify',
+        },
+      },
+      tooltip: {
+        valueSuffix: ' tickets',
+      },
+      plotOptions: {
+        bar: {
+          dataLabels: {
+            enabled: true,
+          },
+        },
+      },
+      series: [
+        {
+          name: 'Confirmed Tickets',
+          type: 'bar',
+          data: counts,
+        },
+      ],
+    };
+  }
+
+  prepareTop5AirlinesChart() {
+    const confirmedData = this.data.filter(
+      (item) => (item.status || '').toUpperCase() === 'CONFIRMED'
+    );
+
+    const airlineCounts: { [airline: string]: number } = {};
+    confirmedData.forEach((item) => {
+      const airline = item.plating_carrier || 'Unknown';
+      airlineCounts[airline] = (airlineCounts[airline] || 0) + 1;
+    });
+
+    const sortedAirlines = Object.entries(airlineCounts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5);
+
+    this.top5AirlinesChartOptions = {
+      chart: {
+        type: 'column',
+      },
+      title: {
+        text: 'Top 5 Airlines with Confirmed Tickets',
+      },
+      xAxis: {
+        categories: ['Confirmed Tickets'],
+        title: {
+          text: null,
+        },
+      },
+      yAxis: {
+        min: 0,
+        title: {
+          text: 'Ticket Count',
+        },
+      },
+      tooltip: {
+        pointFormat: '<b>{series.name}</b>: {point.y} tickets',
+      },
+      plotOptions: {
+        column: {
+          dataLabels: {
+            enabled: true,
+          },
+          grouping: true,
+        },
+      },
+      legend: {
+        enabled: true,
+        title: {
+          text: '',
+        },
+      },
+      series: sortedAirlines.map(([airline, count], index) => ({
+        name: airline,
+        type: 'column',
+        data: [count],
+        color: Highcharts.getOptions().colors?.[index % 10] || '#888',
+      })),
+    };
+  }
+  prepareRouteCharts() {
+    const routeCounts: { [route: string]: number } = {};
+
+    this.data.forEach((item) => {
+      const route = item.routes || 'Unknown';
+      routeCounts[route] = (routeCounts[route] || 0) + 1;
+    });
+
+    const sortedRoutes = Object.entries(routeCounts).sort(
+      (a, b) => b[1] - a[1]
+    );
+
+    const barCategories = sortedRoutes.map(([route]) => route);
+    const barData = sortedRoutes.map(([, count]) => count);
+    const donutData = sortedRoutes.map(([route, count]) => ({
+      name: route,
+      y: count,
+    }));
+
+    // Horizontal Bar Chart
+    this.routeBarChartOptions = {
+      chart: {
+        type: 'bar',
+      },
+      title: {
+        text: 'All Routes - Horizontal Bar Chart',
+      },
+      xAxis: {
+        categories: barCategories,
+        title: {
+          text: 'Routes',
+        },
+      },
+      yAxis: {
+        min: 0,
+        title: {
+          text: 'Ticket Count',
+        },
+      },
+      tooltip: {
+        valueSuffix: ' tickets',
+      },
+      plotOptions: {
+        bar: {
+          dataLabels: {
+            enabled: true,
+          },
+        },
+      },
+      series: [
+        {
+          name: 'Tickets',
+          type: 'bar',
+          data: barData,
+        },
+      ],
+    };
+
+    // Donut Chart
+    this.routeDonutChartOptions = {
+      chart: {
+        type: 'pie',
+      },
+      title: {
+        text: 'All Routes - Donut Chart',
+      },
+      tooltip: {
+        pointFormat: '{series.name}: <b>{point.y}</b>',
+      },
+      accessibility: {
+        point: {
+          valueSuffix: '',
+        },
+      },
+      plotOptions: {
+        pie: {
+          innerSize: '50%',
+          dataLabels: {
+            enabled: true,
+            format: '{point.name}: {point.y}',
+          },
+        },
+      },
+      series: [
+        {
+          name: 'Tickets',
+          type: 'pie',
+          colorByPoint: true,
+          data: donutData,
+        } as Highcharts.SeriesPieOptions,
+      ],
+    };
+  }
+
+  prepareTop5RouteCharts() {
+    const routeCounts: { [route: string]: number } = {};
+
+    this.data.forEach((item) => {
+      const route = item.routes || 'Unknown';
+      routeCounts[route] = (routeCounts[route] || 0) + 1;
+    });
+
+    const top5Routes = Object.entries(routeCounts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5);
+
+    const barCategories = top5Routes.map(([route]) => route);
+    const barData = top5Routes.map(([, count]) => count);
+    const donutData = top5Routes.map(([route, count]) => ({
+      name: route,
+      y: count,
+    }));
+
+    this.top5RouteBarChartOptions = {
+      chart: {
+        type: 'bar',
+      },
+      title: {
+        text: 'Top 5 Routes - Horizontal Bar Chart',
+      },
+      xAxis: {
+        categories: barCategories,
+        title: {
+          text: 'Routes',
+        },
+      },
+      yAxis: {
+        min: 0,
+        title: {
+          text: 'Ticket Count',
+        },
+      },
+      tooltip: {
+        valueSuffix: ' tickets',
+      },
+      plotOptions: {
+        bar: {
+          dataLabels: {
+            enabled: true,
+          },
+        },
+      },
+      series: [
+        {
+          name: 'Tickets',
+          type: 'bar',
+          data: barData,
+        },
+      ],
+    };
+
+    this.top5RouteDonutChartOptions = {
+      chart: {
+        type: 'pie',
+      },
+      title: {
+        text: 'Top 5 Routes - Donut Chart',
+      },
+      tooltip: {
+        pointFormat: '{series.name}: <b>{point.y}</b>',
+      },
+      accessibility: {
+        point: {
+          valueSuffix: '',
+        },
+      },
+      plotOptions: {
+        pie: {
+          innerSize: '50%',
+          dataLabels: {
+            enabled: true,
+            format: '{point.name}: {point.y}',
+          },
+        },
+      },
+      series: [
+        {
+          name: 'Tickets',
+          type: 'pie',
+          colorByPoint: true,
+          data: donutData,
+        } as Highcharts.SeriesPieOptions,
+      ],
     };
   }
 }
